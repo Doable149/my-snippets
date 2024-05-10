@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Flèches Dynamiques sur une Image</title>
+    <style>
+      canvas {
+        position: absolute;
+        top: 0;
+        left: 0;
+      }
+      #image-container {
+        position: relative;
+        display: inline-block;
+      }
+      #image {
+        max-width: 100%;
+        height: auto;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="image-container">
+      <img
+        id="vegetalisation"
+        src="vegetalisation.webp"
+        alt="Plan de Végétalisation"
+      />
+      <canvas id="vegetalisationCanvas"></canvas>
+    </div>
+
+    <script>
+
+    function isInOval(x, y, ovalX, ovalY, rayonX, rayonY) {
+        var dx = (x - ovalX) / rayonX;
+        var dy = (y - ovalY) / rayonY;
+        return dx * dx + dy * dy <= 1;
+    }
+
+    function drawOvalWithTextAndLinkInside(
+        canvas,
+        ctx,
+        x,
+        y,
+        rayonX,
+        rayonY,
+        text = "Oval text",
+        link
+      ) {
+        ctx.beginPath();
+        ctx.fillStyle = "black";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.font = "24px Arial";
+
+        ctx.ellipse(x, y, rayonX, rayonY, 0, 0, 2 * Math.PI); // (x, y, rayonX, rayonY, rotation, débutAngle, finAngle)
+        ctx.fillText(text, x, y);
+        ctx.stroke();
+
+        canvas.addEventListener('click', function(event) {
+            const rect = canvas.getBoundingClientRect();
+            const userX = event.clientX - rect.left;
+            const userY = event.clientY - rect.top;
+            console.log({x, y});
+
+            if(isInOval(userX, userY,x, y, rayonX, rayonY )){
+                window.location.href = link;
+            }
+        });
+      }
+
+      function drawRectangle(canvas, ctx, x, y, width, height, link) {
+        ctx.beginPath();
+        ctx.rect(x, y, width, height);
+        ctx.stroke();
+    }
+
+      function drawArrow(ctx, x1, y1, x2, y2) {
+        // Calcul de la longueur et de l'angle de la flèche
+        var dx = x2 - x1;
+        var dy = y2 - y1;
+        var angle = Math.atan2(dy, dx);
+        var length = Math.sqrt(dx * dx + dy * dy);
+
+        ctx.beginPath();
+        // Dessiner la ligne
+        ctx.moveTo(x1, y1);
+        ctx.lineTo(x2, y2);
+        ctx.stroke();
+
+        // Dessiner la tête de la flèche
+        ctx.save();
+        ctx.translate(x2, y2);
+        ctx.rotate(angle);
+        ctx.beginPath();
+        ctx.moveTo(0, 0);
+        ctx.lineTo(-10, -5);
+        ctx.lineTo(-10, 5);
+        ctx.closePath();
+        ctx.fillStyle = "black";
+        ctx.fill();
+        ctx.restore();
+      }
+
+      window.addEventListener("load", function () {
+        const canvas = document.getElementById("vegetalisationCanvas");
+        const image = document.getElementById("vegetalisation");
+
+        canvas.width = image.clientWidth + 400;
+        canvas.height = image.clientHeight;
+
+        const ctx = canvas.getContext("2d");
+        const vegetalisationImg = document.getElementById("vegetalisation");
+        const imageRect = vegetalisationImg.getBoundingClientRect();
+
+        ctx.lineWidth = 3;
+
+        ctx.clearRect(0, 0, canvas.width, canvas.height); // Efface le contenu précédent
+        
+
+        const ovalWidth = 150;
+        const ovalHeight = 50;
+        const pergolaX = image.clientWidth / 2 + 200;
+        const pergolaY = image.clientHeight / 2 + 50;
+        const arceauxX = image.clientWidth / 2 - 390;
+        const arceauxY = image.clientHeight / 2 - 30;
+        const ovalPergolaX = canvas.width - ovalWidth - 30;
+        const ovalPergolaY = canvas.height / 2;
+        const ovalArceauxX = canvas.width - ovalWidth - 30;
+        const ovalArceauxY = canvas.height / 3;
+
+        drawOvalWithTextAndLinkInside(
+          canvas,
+          ctx,
+          ovalPergolaX,
+          ovalPergolaY,
+          ovalWidth,
+          ovalHeight,
+          "Pergola",
+          'pergola.html'
+        );
+
+        drawOvalWithTextAndLinkInside(
+          canvas,
+          ctx,
+          ovalArceauxX,
+          ovalArceauxY,
+          ovalWidth,
+          ovalHeight,
+          "Arceaux",
+          'arceaux.html'
+        );
+
+        drawRectangle(
+          canvas, 
+          ctx,
+          pergolaX,
+          pergolaY,
+          150,
+          100
+        );
+
+        drawRectangle(
+          canvas, 
+          ctx,
+          arceauxX,
+          arceauxY,
+          100,
+          80
+        );
+
+        drawArrow(ctx, ovalPergolaX - ovalWidth, ovalPergolaY, pergolaX + 150, pergolaY);
+        drawArrow(ctx, ovalArceauxX - ovalWidth, ovalArceauxY, arceauxX + 100, arceauxY);
+
+        canvas.addEventListener('mousemove', function(event) {
+            var rect = canvas.getBoundingClientRect();
+            var x = event.clientX - rect.left;
+            var y = event.clientY - rect.top;
+
+            // Vérifie si le survol est à l'intérieur de l'ovale
+            if (isInOval(x, y, ovalArceauxX, ovalArceauxY, ovalWidth, ovalHeight) || isInOval(x, y, ovalPergolaX, ovalPergolaY, ovalWidth, ovalHeight)) {
+                // Le survol est à l'intérieur de l'ovale, change le curseur
+                canvas.style.cursor = 'pointer';
+            } else {
+                // Le survol n'est pas à l'intérieur de l'ovale, réinitialise le curseur
+                canvas.style.cursor = 'default';
+            }
+        });
+      });
+    </script>
+  </body>
+</html>
